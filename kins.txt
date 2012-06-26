@@ -1,0 +1,57 @@
+/*
+                 _
+4-wire planar 2-RPR parallel robot
+
+Translational motion is only allowed using constant zero degrees of end-effector rotation.  If angular rotation is allowed the forward kinematics requires a 6th degree roots solve, but only quadratic without.
+
+-- anchor points (Lx by Ly square) --
+A1 = {0, 0}
+A2 = {0, Ly}
+A3 = {Lx, 0}
+A4 = {Lx, Ly}
+
+-- end-effector attachment points (b by h square) --
+B1 = {-b/2.0, -h/2.0}
+B3 = {b/2.0, -h/2.0}
+
+-- joint 0 and 2 lengths --
+L1 and L3 input
+
+x,y = the intersection of 2 circles that are offset by the constant B1,B3 and having radius equal to the joint length
+
+circle_intersect( A1-B1, L1, A3-B3, L3 )
+                ( {b/2.0, h/2.0}, L1, {-b/2.0) + Lx, h/2.0}, L3 )
+
+take positive solution, ie 1st
+
+*/
+
+/*
+
+A1 = {0, 0}
+A2 = {0, Ly}
+A3 = {Lx, 0}
+A4 = {Lx, Ly}
+
+-- A2 *__                                ______* A4
+ ^       \__L2                    __L4__/
+ |           \___     b    ______/
+ |               *--------*
+Ly               |        | h
+ |            ___*--------*______
+ |        ___/                   \______
+ v     __/ L1                       L3  \______
+-- A1 *                                        * A3
+      |<-------------- Lx -------------------->|
+
+
+
+L1 = Sqrt[Abs[0.5 b - x]^2 + Abs[0.5 h - y]^2]
+
+L2 = Sqrt[Abs[0.5 b - x]^2 + Abs[-0.5 h + Ly - y]^2]
+
+L3 = Sqrt[Abs[-0.5 b + Lx - x]^2 + Abs[0.5 h - y]^2]
+
+L4 = Sqrt[Abs[-0.5 b + Lx - x]^2 + Abs[-0.5 h + Ly - y]^2]
+
+*/
