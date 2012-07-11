@@ -1,3 +1,41 @@
-# Include your customized HAL commands here
-# The commands in this file are run after the AXIS GUI (including PyVCP panel) starts
+
+loadrt or2 count=2
+loadrt mux4 count=1
+addf or2.0 servo-thread
+addf or2.1 servo-thread
+addf mux4.0 servo-thread
+# set the jog speed for the joypad again use numbers that make sense for your machine
+setp mux4.0.in0 0 # this one must be 0 to prevent motion unless a button is pressed
+setp mux4.0.in1 25
+setp mux4.0.in2 100
+setp mux4.0.in3 200
+# the following does the magic of setting the jog speeds
+net remote-speed-slow or2.0.in0 input.0.btn-tl
+net remote-speed-medium or2.1.in0 input.0.abs-z-is-pos
+net remote-speed-fast or2.0.in1 or2.1.in1 input.0.btn-tr
+net joy-speed-1 mux4.0.sel0 <= or2.0.out
+net joy-speed-2 mux4.0.sel1 <= or2.1.out
+net joy-speed-final halui.jog-speed <= mux4.0.out
+
+#net joy-x-jog halui.jog.0.analog <= input.0.abs-x-position 
+net key-x-jog-plus halui.jog.0.plus <= input.0.btn-b
+net key-x-jog-minus halui.jog.0.minus <= input.0.btn-x
+
+#net joy-y-jog halui.jog.1.analog <= input.0.abs-y-position 
+net key-y-jog-plus halui.jog.1.plus <= input.0.btn-y
+net key-y-jog-minus halui.jog.1.minus <= input.0.btn-a
+
+#net joy-z-jog halui.jog.2.analog <= input.0.abs-rx-position 
+net key-z-jog-plus halui.jog.2.plus <= input.0.btn-right
+net key-z-jog-minus halui.jog.2.minus <= input.0.btn-mouse
+
+#net joy-a-jog halui.jog.3.analog <= input.0.abs-ry-position 
+net key-a-jog-plus halui.jog.3.plus <= input.0.btn-0
+net key-a-jog-minus halui.jog.3.minus <= input.0.btn-1
+
+setp halui.jog-deadband 50.0
+setp input.0.abs-x-scale 127.5
+setp input.0.abs-y-scale 127.5
+setp input.0.abs-rx-scale 127.5
+setp input.0.abs-ry-scale 127.5
 
