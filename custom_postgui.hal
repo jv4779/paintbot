@@ -6,7 +6,7 @@ addf mux4.0 servo-thread
 setp mux4.0.in0 0 # this one must be 0 to prevent motion unless a button is pressed
 setp mux4.0.in1 25
 setp mux4.0.in2 100
-setp mux4.0.in3 200
+setp mux4.0.in3 0
 # the following does the magic of setting the jog speeds
 net remote-speed-slow or2.1.in0 input.0.btn-tl
 net remote-speed-medium or2.2.in0 input.0.abs-z-is-pos

@@ -46,6 +46,7 @@ net dout-01 <= motion.digital-out-01
 net dout-02 <= motion.digital-out-02
 
 net a0-enable => parport.0.pin-01-out
+setp parport.0.pin-01-out-invert 1
 
 net a0-step => parport.0.pin-02-out
 net a0-dir => parport.0.pin-03-out
