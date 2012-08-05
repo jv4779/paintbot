@@ -35,7 +35,7 @@ net dout-00 => pwmgen.0.enable
 # latch time in seconds and hold current precent
 setp oneshot.0.width [SOLENOID]LATCH_TIME_SECONDS
 setp pwmgen.0.value [SOLENOID]HOLD_CURRENT_PERCENT
-setp pwmgen.0.pwm-freq 200
+setp pwmgen.0.pwm-freq 1000
 setp pwmgen.0.dither-pwm 1
 # if either oneshot or pwm is active, then output is active
 net pwmgen-out <= pwmgen.0.pwm => or2.0.in0
@@ -65,8 +65,8 @@ net a3-dir => parport.0.pin-09-out
 setp parport.0.pin-09-out-invert 1
 
 net solenoid-final => parport.0.pin-17-out
-net dout-01 => parport.0.pin-14-out
-net dout-02 => parport.0.pin-16-out
+net dout-01 => parport.0.pin-16-out
+net dout-02 => parport.0.pin-14-out
 
 
 
