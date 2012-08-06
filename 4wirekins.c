@@ -61,10 +61,27 @@ struct haldata {
 
 #define sq(x) ((x)*(x))
 
-int circle_circle_intersection(double x0, double y0, double r0,
+static int line_line_intersection(
+    double x1, double y1,
+    double x2, double y2,
+    double x3, double y3,
+    double x4, double y4,
+    double *xi, double *yi);
+
+static int circle_circle_intersection(double x0, double y0, double r0,
                                double x1, double y1, double r1,
                                double *xi, double *yi,
                                double *xi_prime, double *yi_prime);
+
+static void calculate_origins();
+
+static double origin_x = 0;
+static double origin_y = 0;
+
+static double a1_origin = 0;
+static double a2_origin = 0;
+static double a3_origin = 0;
+static double a4_origin = 0;
 
 /*
   forward kinematics takes three strut lengths and computes Dx, Dy, and Dz
@@ -78,15 +95,16 @@ int kinematicsForward(const double * joints,
                       const KINEMATICS_FORWARD_FLAGS * fflags,
                       KINEMATICS_INVERSE_FLAGS * iflags)
 {
-#define L1 (joints[0])
-#define L2 (joints[1])
-#define L3 (joints[2])
-#define L4 (joints[3])
+#define L1 (joints[0]+a1_origin)
+#define L2 (joints[1]+a2_origin)
+#define L3 (joints[2]+a3_origin)
+#define L4 (joints[3]+a4_origin)
 #define Dx (pos->tran.x)
 #define Dy (pos->tran.y)
   double xi_1_3,yi_1_3,xi_2_4,yi_2_4;
   double halfEb = Eb/2.0, halfEh = Eh/2.0;
 
+  calculate_origins();
   //rtapi_print("kinematicsForward 1=%f 2=%f 3=%f 4=%f\n",L1,L2,L3,L4);
 
   if ( !circle_circle_intersection(
@@ -104,8 +122,8 @@ int kinematicsForward(const double * joints,
     return -1;
   }
 
-  Dx = (xi_1_3 + xi_2_4)/2.0;
-  Dy = (yi_1_3 + yi_2_4)/2.0;
+  Dx = (xi_1_3 + xi_2_4)/2.0 - origin_x;
+  Dy = (yi_1_3 + yi_2_4)/2.0 - origin_y;
 
   //rtapi_print("kinematicsForward result x=%f y=%f\n",Dx,Dy);
 
@@ -143,24 +161,25 @@ int kinematicsInverse(const EmcPose * pos,
 #define L2 (joints[1])
 #define L3 (joints[2])
 #define L4 (joints[3])
-#define Dx (pos->tran.x)
-#define Dy (pos->tran.y)
+#define Dx (pos->tran.x+origin_x)
+#define Dy (pos->tran.y+origin_y)
 
   double halfEb = Eb/2.0, halfEh = Eh/2.0;
 
+  calculate_origins();
   //rtapi_print("kinematicsInverse x=%f y=%f\n",Dx,Dy);
 
   if ( Dx < halfEb || Dy < halfEh || Dx > Lx - halfEb || Dy > Ly - halfEh ) {
     return -1;
   }
 
-  L1 = sqrt(sq(fabs(halfEb - Dx)) + sq(fabs(halfEh - Dy)));
+  L1 = sqrt(sq(fabs(halfEb - Dx)) + sq(fabs(halfEh - Dy))) - a1_origin;
 
-  L2 = sqrt(sq(fabs(halfEb - Dx)) + sq(fabs(-halfEh + Ly - Dy)));
+  L2 = sqrt(sq(fabs(halfEb - Dx)) + sq(fabs(-halfEh + Ly - Dy))) - a2_origin;
 
-  L3 = sqrt(sq(fabs(-halfEb + Lx - Dx)) + sq(fabs(halfEh - Dy)));
+  L3 = sqrt(sq(fabs(-halfEb + Lx - Dx)) + sq(fabs(halfEh - Dy))) - a3_origin;
 
-  L4 = sqrt(sq(fabs(-halfEb + Lx - Dx)) + sq(fabs(-halfEh + Ly - Dy)));
+  L4 = sqrt(sq(fabs(-halfEb + Lx - Dx)) + sq(fabs(-halfEh + Ly - Dy))) - a4_origin;
 
   //rtapi_print("kinematicsInverse result 1=%f 2=%f 3=%f 4=%f\n",L1,L2,L3,L4);
 
@@ -177,6 +196,35 @@ int kinematicsInverse(const EmcPose * pos,
 KINEMATICS_TYPE kinematicsType()
 {
   return KINEMATICS_BOTH;
+}
+
+static void calculate_origins()
+{
+    static double last_lx=0, last_ly=0, last_eb=0, last_eh=0;
+
+    double xi,yi;
+
+    // only recalc if stuff changed
+    if ( Lx != last_lx || Ly != last_ly || Eb != last_eb || Eh != last_eh )
+    {
+        // find the origin where the 4 corners intersect
+	if ( line_line_intersection( 0,0, Lx,Ly, 0,Ly, Lx,0, &xi,&yi ) )
+        {
+            double halfEb = Eb/2.0, halfEh = Eh/2.0;
+
+            origin_x = xi;
+            origin_y = yi;
+
+            a1_origin = sqrt( sq( 0 - (origin_x - halfEb) ) + sq( 0 - (origin_y - halfEh) ) );
+            a2_origin = sqrt( sq( 0 - (origin_x - halfEb) ) + sq( Ly - (origin_y + halfEh) ) );
+            a3_origin = sqrt( sq( Lx - (origin_x + halfEb) ) + sq( 0 - (origin_y - halfEh) ) );
+            a4_origin = sqrt( sq( Lx - (origin_x + halfEb) ) + sq( Ly - (origin_y + halfEh) ) );
+
+            rtapi_print("calculate_origins x=%f y=%f a1=%f a2=%f a3=%f a4=%f\n",origin_x,origin_y,a1_origin,a2_origin,a3_origin,a4_origin);
+
+            last_lx = Lx; last_ly = Ly; last_eb = Eb; last_eh = Eh;
+        }
+    }
 }
 
 #ifdef MAIN
@@ -337,6 +385,43 @@ void rtapi_app_exit(void) { hal_exit(comp_id); }
 
 #endif /* MAIN */
 
+/* two line segment intersection
+ between line segment a and b with the given x,y of each endpoint */
+
+static int line_line_intersection(
+    double x1, double y1,
+    double x2, double y2,
+    double x3, double y3,
+    double x4, double y4,
+    double *xi, double *yi)
+{
+   double mua,mub;
+   double denom,numera,numerb;
+
+   denom  = (y4-y3) * (x2-x1) - (x4-x3) * (y2-y1);
+   numera = (x4-x3) * (y1-y3) - (y4-y3) * (x1-x3);
+   numerb = (x2-x1) * (y1-y3) - (y2-y1) * (x1-x3);
+
+   /* Are the line parallel */
+   if (fabs(denom) < __DBL_EPSILON__) {
+      *xi = 0;
+      *yi = 0;
+      return 0;
+   }
+
+   /* Is the intersection along the the segments */
+   mua = numera / denom;
+   mub = numerb / denom;
+   if (mua < 0 || mua > 1 || mub < 0 || mub > 1) {
+      *xi = 0;
+      *yi = 0;
+      return 0;
+   }
+   *xi = x1 + mua * (x2 - x1);
+   *yi = y1 + mua * (y2 - y1);
+   return 1;
+}
+
 /* circle_circle_intersection() *
  * Determine the points where 2 circles in a common plane intersect.
  *
@@ -354,7 +439,7 @@ void rtapi_app_exit(void) { hal_exit(comp_id); }
  *
  */
 
-int circle_circle_intersection(double x0, double y0, double r0,
+static int circle_circle_intersection(double x0, double y0, double r0,
                                double x1, double y1, double r1,
                                double *xi, double *yi,
                                double *xi_prime, double *yi_prime)
