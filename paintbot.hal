@@ -11,8 +11,8 @@ loadrt pwmgen output_type=0
 
 setp 4wirekins.Lx 37.402
 setp 4wirekins.Ly 37.402
-setp 4wirekins.Eb 2.402
-setp 4wirekins.Eh 2.402
+setp 4wirekins.Eb 2.75
+setp 4wirekins.Eh 2.75
 
 addf parport.0.read base-thread
 addf stepgen.make-pulses base-thread
